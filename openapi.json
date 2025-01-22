@@ -1,0 +1,1033 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "Activity Engine API",
+    "version": "1.0.0",
+    "description": "The Activity Engine manages all user-generated data such as student assessment attempts, answers, and metrics (video metrics and violations)."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/v1",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Assessment",
+      "description": "Endpoints related to handling assessment grading and storing of answers."
+    },
+    {
+      "name": "Metrics",
+      "description": "Endpoints related to student activity metrics (video metrics, violations)."
+    },
+    {
+      "name": "Course Progress",
+      "description": "Endpoints related to managing course progress for students."
+    }
+  ],
+  "paths": {
+
+        "/assessment/start": {
+      "post": {
+        "summary": "Start assessment for grading",
+        "tags": [
+          "Assessment"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "assessmentId",
+                  "studentId",
+                  "courseInstanceId"
+                ],
+                "properties": {
+                  "assessmentId": {
+                    "type": "string",
+                    "description": "The ID of the assessment"
+                  },
+                  "studentId": {
+                    "type": "string",
+                    "description": "The ID of the student"
+                  },
+                  "courseInstanceId": {
+                    "type": "string",
+                    "description": "The course instance identifier"
+                  }
+                },
+                "example": {
+                  "studentId": "stu1",
+                  "courseInstanceId": "course",
+                  "assessmentId": "A-1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assessment/submit": {
+      "post": {
+        "summary": "Submit assessment for grading",
+        "tags": [
+          "Assessment"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "assessmentId",
+                  "attemptId",
+                  "studentId",
+                  "courseInstanceId",
+                  "answers"
+                ],
+                "properties": {
+                  "assessmentId": {
+                    "type": "string",
+                    "description": "The ID of the assessment"
+                  },
+                   "attemptId": {
+                    "type": "string",
+                    "description": "The ID of the attempt"
+                  },
+                  "studentId": {
+                    "type": "string",
+                    "description": "The ID of the student"
+                  },
+                  "courseInstanceId": {
+                    "type": "string",
+                    "description": "The course instance identifier"
+                  },
+                  "answers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "questionId",
+                        "type"
+                      ],
+                      "properties": {
+                        "questionId": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "NAT",
+                            "DESCRIPTIVE",
+                            "MCQ",
+                            "MSQ"
+                          ]
+                        },
+                        "value": {
+                          "type": "string"
+                        },
+                        "answerText": {
+                          "type": "string"
+                        },
+                        "choiceId": {
+                          "type": "string"
+                        },
+                        "choiceIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "studentId": "stu1",
+                  "courseInstanceId": "course",
+                  "assessmentId": "A-1",
+                  "attemptId": "1",
+                  "answers": {
+                    "natAnswers": [
+                      {
+                        "questionId": "NAT1",
+                        "value": "42"
+                      }
+                    ],
+                    "mcqAnswers": [
+                      {
+                        "questionId": "MCQ1",
+                        "choiceId": "C1"
+                      }
+                    ],
+                    "msqAnswers": [
+                      {
+                        "questionId": "MSQ1",
+                        "choiceIds": [
+                          "C1",
+                          "C2"
+                        ]
+                      }
+                    ],
+                    "descriptiveAnswers": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/metrics/violations": {
+      "get": {
+        "summary": "Get recorded violations with images",
+        "tags": [
+          "Metrics"
+        ],
+        "parameters": [
+          {
+            "name": "studentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contentTypeId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Violations retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "studentId": {
+                        "type": "string"
+                      },
+                      "contentType": {
+                        "type": "string",
+                        "enum": [
+                          "VIDEO",
+                          "ARTICLE",
+                          "ASSESSMENT"
+                        ]
+                      },
+                      "contentTypeId": {
+                        "type": "string"
+                      },
+                      "violationType": {
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "cameraImages": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "integer"
+                            },
+                            "imageData": {
+                              "type": "string",
+                              "description": "Base64-encoded image data"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "id": 501,
+                    "studentId": "stu123",
+                    "contentType": "VIDEO",
+                    "contentTypeId": "video789",
+                    "violationType": "OUT_OF_FRAME",
+                    "createdAt": "2024-12-12T10:00:00Z",
+                    "cameraImages": [
+                      {
+                        "id": 101,
+                        "imageData": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+                        "createdAt": "2024-12-12T10:05:00Z"
+                      },
+                      {
+                        "id": 102,
+                        "imageData": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+                        "createdAt": "2024-12-12T10:06:00Z"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Record a new violation with images",
+        "tags": [
+          "Metrics"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "studentId",
+                  "contentType",
+                  "contentTypeId",
+                  "violationType",
+                  "images"
+                ],
+                "properties": {
+                  "studentId": {
+                    "type": "string"
+                  },
+                  "contentType": {
+                    "type": "string",
+                    "enum": [
+                      "VIDEO",
+                      "ARTICLE",
+                      "ASSESSMENT"
+                    ]
+                  },
+                  "contentTypeId": {
+                    "type": "string"
+                  },
+                  "violationType": {
+                    "type": "string"
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "base64Image": {
+                          "type": "string",
+                          "description": "Base64-encoded image data"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "studentId": "stu123",
+                  "contentType": "VIDEO",
+                  "contentTypeId": "video789",
+                  "violationType": "OUT_OF_FRAME",
+                  "images": [
+                    {
+                      "base64Image": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
+                    },
+                    {
+                      "base64Image": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Violation recorded with images",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "violationId": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "status": "recorded",
+                  "violationId": 501
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/course-progress/update-section-item-progress": {
+      "post": {
+        "summary": "Update Seciton Item Progress",
+        "tags": [
+          "CourseProgress"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "courseInstanceId",
+                  "studentId",
+                  "sectionItemId"
+                ],
+                "properties": {
+                  "courseInstanceId": {
+                    "type": "string",
+                    "description": "The ID of the course instance"
+                  },
+                  "studentId": {
+                    "type": "string",
+                    "description": "The ID of the student"
+                  },
+                  "sectionItemId": {
+                    "type": "string",
+                    "description": "The ID of the section item"
+                  },
+                  "cascade": {
+                    "type": "boolean",
+                    "description": "Whether to cascade updates"
+                  }
+                },
+                "example": {
+                  "courseInstanceId": "courseXYZ",
+                  "studentId": "stu1",
+                  "sectionItemId": "item1",
+                  "cascade": true
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated progress successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "course": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "modules": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "nullable": true
+                    },
+                    "sections": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "nullable": true
+                    },
+                    "sectionItems": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "nullable": true
+                    }
+                  }
+                },
+                "example": {
+                  "course": null,
+                  "modules": null,
+                  "sections": [
+                    "section1"
+                  ],
+                  "sectionItems": [
+                    "item456",
+                    "item457"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content":{
+              "application/json":{
+                "schema":{
+                  "type":"object",
+                  "properties":{
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/course-progress/initialize-progress": {
+      "post": {
+        "summary": "Create Course Progress for Students",
+        "tags": [
+          "CourseProgress"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "courseInstanceId",
+                  "studentIds",
+                  "modules"
+                ],
+                "properties": {
+                  "courseInstanceId": {
+                    "type": "string",
+                    "description": "Unique ID for the course instance"
+                  },
+                  "studentIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "List of student IDs"
+                  },
+                  "modules": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "moduleId": {
+                          "type": "string"
+                        },
+                        "sequence": {
+                          "type": "integer"
+                        },
+                        "sections": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "sectionId": {
+                                "type": "string"
+                              },
+                              "sequence": {
+                                "type": "integer"
+                              },
+                              "sectionItems": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "sectionItemId": {
+                                      "type": "string"
+                                    },
+                                    "sequence": {
+                                      "type": "integer"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "courseInstanceId": "courseXYZ",
+                  "studentIds": [
+                    "stu1",
+                    "stu2"
+                  ],
+                  "modules": [
+                    {
+                      "moduleId": "mod1",
+                      "sequence": 1,
+                      "sections": [
+                        {
+                          "sectionId": "sec1",
+                          "sequence": 1,
+                          "sectionItems": [
+                            {
+                              "sectionItemId": "item1",
+                              "sequence": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Progress initialized successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "studentCount": {
+                      "type": "integer"
+                    },
+                    "totalRecords": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "message": "Progress initialization complete.",
+                  "studentCount": 2,
+                  "totalRecords": 10
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/course-progress/course": {
+      "get": {
+        "summary": "Fetch Course Progress",
+        "tags": [
+          "CourseProgress"
+        ],
+        "parameters": [
+          {
+            "name": "courseInstanceId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "courseXYZ"
+            }
+          },
+          {
+            "name": "studentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "stu1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Course progress retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties":{
+                    "progress":{
+                      "type":"string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Progress not found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/course-progress/module": {
+      "get": {
+        "summary": "Fetch Module Progress",
+        "tags": [
+          "CourseProgress"
+        ],
+        "parameters": [
+          {
+            "name": "courseInstanceId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "courseXYZ"
+            }
+          },
+          {
+            "name": "studentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "stu1"
+            }
+          },
+          {
+            "name": "moduleId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "mod1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Module progress retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties":{
+                    "progress":{
+                      "type":"string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Progress not found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/course-progress/section": {
+      "get": {
+        "summary": "Fetch Section Progress",
+        "tags": [
+          "CourseProgress"
+        ],
+        "parameters": [
+          {
+            "name": "courseInstanceId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "courseXYZ"
+            }
+          },
+          {
+            "name": "studentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "stu1"
+            }
+          },
+          {
+            "name": "sectionId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "sec1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Section progress retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties":{
+                    "progress":{
+                      "type":"string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Progress not found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/course-progress/section-item": {
+      "get": {
+        "summary": "Fetch Section Item Progress",
+        "tags": [
+          "CourseProgress"
+        ],
+        "parameters": [
+          {
+            "name": "courseInstanceId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "courseXYZ"
+            }
+          },
+          {
+            "name": "studentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "stu1"
+            }
+          },
+          {
+            "name": "sectionItemId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "item1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Section item progress retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties":{
+                    "progress":{
+                      "type":"string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Progress not found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "StudentNATAnswer": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "questionId": {
+              "type": "string"
+            },
+            "studentId": {
+              "type": "string"
+            },
+            "courseInstanceId": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            },
+            "assessmentAttemptId": {
+              "type": "integer"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updatedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "StudentDescriptiveAnswer": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "questionId": {
+              "type": "string"
+            },
+            "studentId": {
+              "type": "string"
+            },
+            "courseInstanceId": {
+              "type": "string"
+            },
+            "answerText": {
+              "type": "string"
+            },
+            "assessmentAttemptId": {
+              "type": "integer"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updatedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "StudentMCQAnswer": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "questionId": {
+              "type": "string"
+            },
+            "studentId": {
+              "type": "string"
+            },
+            "courseInstanceId": {
+              "type": "string"
+            },
+            "choiceId": {
+              "type": "string"
+            },
+            "assessmentAttemptId": {
+              "type": "integer"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updatedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "StudentMSQAnswer": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "questionId": {
+              "type": "string"
+            },
+            "studentId": {
+              "type": "string"
+            },
+            "courseInstanceId": {
+              "type": "string"
+            },
+            "choiceId": {
+              "type": "string"
+            },
+            "assessmentAttemptId": {
+              "type": "integer"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updatedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "StudentViolationMetrics": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "studentId": {
+              "type": "string"
+            },
+            "contentType": {
+              "type": "string",
+              "enum": [
+                "VIDEO",
+                "ARTICLE",
+                "ASSESSMENT"
+              ]
+            },
+            "contentTypeId": {
+              "type": "string"
+            },
+            "violationType": {
+              "type": "string"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updatedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      }
+    }
+  }
+}
