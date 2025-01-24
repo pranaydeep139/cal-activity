@@ -7,6 +7,18 @@ datasource db {
   url      = "postgresql://postgres:postgres@localhost:5432/postgres"
 }
 
+model LoginSession {
+  id              Int      @id @default(autoincrement())
+  userId          String   @map("userId")
+  accessToken     String
+  refreshToken    String?
+  expiresAt       DateTime // Access token expiration time
+
+  @@index([userId])
+  @@index([accessToken])
+}
+
+
 model StudentCourseProgress {
   studentId        String
   courseInstanceId String

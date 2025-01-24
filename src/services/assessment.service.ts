@@ -1,5 +1,3 @@
-// src/services/assessment.service.ts
-
 import { AssessmentRepository } from '../repositories/assessment.repository';
 import { AnswersRepository } from '../repositories/answers.repository';
 import { SubmissionAnswers, GradingResult, QuestionSolution, NATSolution, MCQSolution, MSQSolution, DescriptiveSolution } from '../types/assessment.types';
@@ -7,7 +5,7 @@ import { AssessmentAttemptStatusEnum, AssessmentStatusEnum } from '@prisma/clien
 import { retry } from '../utils/retry';
 import { init } from 'express-oas-generator';
 import * as console from "node:console";
-import { URL_BASE, CLIENT_ID, ACCESS_TOKEN, EMAIL, PASSWORD } from "./variables";
+import { URL_BASE, CLIENT_ID, EMAIL, PASSWORD } from "./variables";
 
 const assessmentRepo = new AssessmentRepository();
 const answersRepo = new AnswersRepository();
@@ -73,7 +71,7 @@ export class AssessmentService {
     // Step 1: Create a new assessment attempt
 
     // // Step 2: Ensure assessment progress exists
-    // await assessmentRepo.createAssessmentProgress(studentId, assessmentId, courseInstanceId);
+    await assessmentRepo.createAssessmentProgress(studentId, assessmentId, courseInstanceId);
   
     // Step 3: Store the submitted answers in the database
     await answersRepo.storeAnswers(attemptId, studentId, courseInstanceId, answers);
@@ -119,6 +117,9 @@ export class AssessmentService {
 
         // If the grading result is PASSED, update the overall assessment status
         if (gradingResult.status === AssessmentAttemptStatusEnum.SUCCESS) {
+          console.log("grading Result : ",gradingResult.status);
+          console.log("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+          console.log(AssessmentAttemptStatusEnum);
           await assessmentRepo.updateAssessmentStatus(studentId, assessmentId, courseInstanceId, AssessmentStatusEnum.PASSED);
         }
       }, 3, 2000); // Retry grading up to 3 times with a delay of 2000ms between attempts
@@ -149,6 +150,39 @@ export class AssessmentService {
    * @param answers - The submitted answers for the assessment.
    * @returns An array of correct solutions for the questions.
    */
+  private accessToken: string | null = null;
+
+  private async login(): Promise<LoginResponse> {
+    const response = await fetch(`${URL_BASE}login/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        client_id: CLIENT_ID,
+        email: EMAIL,
+        password: PASSWORD,
+      }),
+    });
+
+    if (!response.ok) {
+      console.log("ERRRRRRR");
+      console.log(response);
+      throw new Error('Login failed');
+    }
+
+    return response.json() as Promise<LoginResponse>;
+  }
+
+  private async getAccessToken(): Promise<string> {
+    if (!this.accessToken) {
+      const loginResponse = await this.login();
+      this.accessToken = loginResponse.ACCESS_TOKEN;
+      console.log("FROM ACESS TOKEN");
+      console.log(this.accessToken);
+    }
+    return this.accessToken;
+  }
   private async fetchSolutionsFromDjango(answers: SubmissionAnswers): Promise<QuestionSolution[]> {
     const questionIds = [
       ...answers.natAnswers.map(a => a.questionId),
@@ -158,7 +192,7 @@ export class AssessmentService {
     ];
   
     try {
-      // Skip login process since we're using hardcoded token
+      const accessToken = await this.getAccessToken();
       const solutions = await Promise.all(
         questionIds.map(async (questionId) => {
           try {
@@ -166,7 +200,7 @@ export class AssessmentService {
               method: "GET",
               headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${ACCESS_TOKEN}` // Use hardcoded token directly
+                "Authorization": `Bearer ${accessToken}`
               },
             });
           
@@ -180,7 +214,7 @@ export class AssessmentService {
     
             const data = await response.json() as DjangoSolutionResponse;
             
-            // Map Django response to QuestionSolution type
+            // Existing solution mapping logic remains the same
             switch (data.question_type) {
               case 'NAT':
                 return {
@@ -230,7 +264,8 @@ export class AssessmentService {
       console.error('Error fetching solutions from Django:', error);
       throw error;
     }
-}
+  }
+
   
 
 

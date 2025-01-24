@@ -22,40 +22,82 @@ export class AssessmentRepository {
     return { attemptId: attempt.attemptId };
   }
 
-  async createAssessmentProgress(studentId: string, assessmentId: string, courseInstanceId: string): Promise<void> {
-    const progress = await prisma.studentAssessmentProgress.findUnique({
-      where: { studentId_assessmentId_courseInstanceId: { studentId, assessmentId, courseInstanceId } },
-    });
-  
-    if (!progress) {
-      await prisma.studentAssessmentProgress.create({
-        data: {
-          studentId,
-          assessmentId,
-          courseInstanceId,
-          assessmentStatus: AssessmentStatusEnum.PENDING, // Default status
+  public async updateAssessmentStatus(
+    studentId: string,
+    assessmentId: string,
+    courseInstanceId: string,
+    status: AssessmentStatusEnum
+  ): Promise<void> {
+    try {
+      // First check if the record exists
+      const progress = await prisma.studentAssessmentProgress.findUnique({
+        where: {
+          studentId_assessmentId_courseInstanceId: {
+            studentId,
+            assessmentId,
+            courseInstanceId,
+          },
         },
       });
+
+      if (!progress) {
+        // If record doesn't exist, create it
+        await prisma.studentAssessmentProgress.create({
+          data: {
+            studentId,
+            assessmentId,
+            courseInstanceId,
+            assessmentStatus: status,
+          },
+        });
+      } else if (progress.assessmentStatus !== AssessmentStatusEnum.PASSED) {
+        // Only update if exists and not already PASSED
+        await prisma.studentAssessmentProgress.update({
+          where: {
+            studentId_assessmentId_courseInstanceId: {
+              studentId,
+              assessmentId,
+              courseInstanceId,
+            },
+          },
+          data: {
+            assessmentStatus: status,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Error updating assessment status:', error);
+      throw error;
     }
   }
 
-  async updateAssessmentStatus(
-  studentId: string,
-  assessmentId: string,
-  courseInstanceId: string,
-  status: AssessmentStatusEnum
-): Promise<void> {
-    const progress = await prisma.studentAssessmentProgress.findUnique({
-        where: { studentId_assessmentId_courseInstanceId: { studentId, assessmentId, courseInstanceId } },
+  public async createAssessmentProgress(
+    studentId: string,
+    courseInstanceId: string,
+    assessmentId: string
+  ): Promise<void> {
+    try {
+      await prisma.studentAssessmentProgress.upsert({
+        where: {
+          studentId_assessmentId_courseInstanceId: {
+            studentId,
+            assessmentId,
+            courseInstanceId,
+          },
+        },
+        update: {}, // Don't update anything if it exists
+        create: {
+          studentId,
+          assessmentId,
+          courseInstanceId,
+          assessmentStatus: AssessmentStatusEnum.PENDING,
+        },
       });
-  // Only update if the status is not already PASSED
-  if (progress?.assessmentStatus !== AssessmentStatusEnum.PASSED) {
-    await prisma.studentAssessmentProgress.update({
-      where: { studentId_assessmentId_courseInstanceId: { studentId, assessmentId, courseInstanceId } },
-      data: { assessmentStatus: status },
-    });
+    } catch (error) {
+      console.error('Error creating assessment progress:', error);
+      throw error;
+    }
   }
-}
 
   async updateAttemptStatus(attemptId: number, status: AssessmentAttemptStatusEnum): Promise<void> {
     await prisma.studentAssessmentAttemptHistory.update({
